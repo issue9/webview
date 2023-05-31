@@ -2,8 +2,8 @@
 
 package webview
 
-// WebView 定义了基于 webview 应用的必要接口
-type WebView interface {
+// Renderer 基于 webview 渲染的基本接口
+type Renderer interface {
 	// 直接将内容设置为 HTML
 	SetHTML(html string)
 
@@ -11,6 +11,11 @@ type WebView interface {
 	//
 	// url 可以是本地或是网络地址
 	Load(url string)
+}
+
+// App 基于 webview 应用的基本接口
+type App interface {
+	Renderer
 
 	// 新页面加载时执行的 JS
 	OnLoad(js string)
@@ -33,4 +38,16 @@ type WebView interface {
 
 	// 关闭服务
 	Close()
+}
+
+// Desktop 基于 webview 桌面应用的接口
+type Desktop interface {
+	App
+
+	// 设置标题
+	SetTitle(title string)
+
+	SetMinSize(w, h int)
+	SetMaxSize(w, h int)
+	SetSize(w, h int)
 }
