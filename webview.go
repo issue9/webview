@@ -44,10 +44,32 @@ type App interface {
 type Desktop interface {
 	App
 
-	// 设置标题
-	SetTitle(title string)
+	// 标题
+	Title() string
+	SetTitle(string)
 
-	SetMinSize(w, h int)
-	SetMaxSize(w, h int)
-	SetSize(w, h int)
+	// 窗口大小
+	Size() Size
+	SetSize(Size, Hint)
+
+	// 窗口位置
+	Position() Point
+	SetPosition(Point)
 }
+
+type Point struct {
+	X, Y int
+}
+
+type Size struct {
+	Width, Height int
+}
+
+type Hint int8
+
+const (
+	HintNone Hint = iota
+	HintFixed
+	HintMin
+	HintMax
+)
