@@ -237,7 +237,7 @@ func (e *Chromium) MessageReceived(sender *ICoreWebView2, args *iCoreWebView2Web
 		uintptr(unsafe.Pointer(&message)),
 	)
 	if e.MessageCallback != nil {
-		e.MessageCallback(w32.UTF16PtrToString(message))
+		e.MessageCallback(windows.UTF16PtrToString(message))
 	}
 	_, _, _ = sender.vtbl.PostWebMessageAsString.Call(
 		uintptr(unsafe.Pointer(sender)),

@@ -7,8 +7,6 @@ package w32
 
 import (
 	"syscall"
-	"unicode/utf16"
-	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
@@ -123,8 +121,6 @@ type WndClassExW struct {
 	HIconSm       windows.Handle
 }
 
-type Rect = windows.Rect
-
 type MinMaxInfo struct {
 	PtReserved     Point
 	PtMaxSize      Point
@@ -145,19 +141,4 @@ type Msg struct {
 	Time     uint32
 	Pt       Point
 	LPrivate uint32
-}
-
-func UTF16PtrToString(p *uint16) string {
-	if p == nil {
-		return ""
-	}
-	// Find NUL terminator.
-	end := unsafe.Pointer(p)
-	n := 0
-	for *(*uint16)(end) != 0 {
-		end = unsafe.Pointer(uintptr(end) + unsafe.Sizeof(*p))
-		n++
-	}
-	s := (*[(1 << 30) - 1]uint16)(unsafe.Pointer(p))[:n:n]
-	return string(utf16.Decode(s))
 }

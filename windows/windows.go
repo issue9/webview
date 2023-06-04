@@ -181,7 +181,7 @@ func (d *desktop) SetSize(s webview.Size, hint webview.Hint) {
 		d.minSize = s
 	} else {
 		p := d.Position()
-		r := w32.Rect{
+		r := windows.Rect{
 			Left:   int32(p.X),
 			Top:    int32(p.Y),
 			Right:  int32(s.Width + p.X),

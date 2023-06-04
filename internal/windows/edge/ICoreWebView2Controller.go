@@ -4,8 +4,6 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
-
-	"github.com/issue9/webview/internal/windows/w32"
 )
 
 type _ICoreWebView2ControllerVtbl struct {
@@ -44,9 +42,9 @@ func (i *ICoreWebView2Controller) AddRef() uintptr {
 	return r
 }
 
-func (i *ICoreWebView2Controller) GetBounds() (*w32.Rect, error) {
+func (i *ICoreWebView2Controller) GetBounds() (*windows.Rect, error) {
 	var err error
-	var bounds w32.Rect
+	var bounds windows.Rect
 	_, _, err = i.vtbl.GetBounds.Call(
 		uintptr(unsafe.Pointer(i)),
 		uintptr(unsafe.Pointer(&bounds)),
@@ -57,7 +55,7 @@ func (i *ICoreWebView2Controller) GetBounds() (*w32.Rect, error) {
 	return &bounds, nil
 }
 
-func (i *ICoreWebView2Controller) PutBounds(bounds w32.Rect) error {
+func (i *ICoreWebView2Controller) PutBounds(bounds windows.Rect) error {
 	var err error
 
 	_, _, err = i.vtbl.PutBounds.Call(
