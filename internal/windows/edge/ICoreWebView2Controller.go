@@ -100,10 +100,10 @@ func (i *ICoreWebView2Controller) GetICoreWebView2Controller2() *ICoreWebView2Co
 
 	var result *ICoreWebView2Controller2
 
-	iidICoreWebView2Controller2 := NewGUID("{c979903e-d4ca-4228-92eb-47ee3fa96eab}")
+	iidICoreWebView2Controller2, _ := windows.GUIDFromString("{c979903e-d4ca-4228-92eb-47ee3fa96eab}")
 	_, _, _ = i.vtbl.QueryInterface.Call(
 		uintptr(unsafe.Pointer(i)),
-		uintptr(unsafe.Pointer(iidICoreWebView2Controller2)),
+		uintptr(unsafe.Pointer(&iidICoreWebView2Controller2)),
 		uintptr(unsafe.Pointer(&result)))
 
 	return result

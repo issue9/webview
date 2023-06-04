@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+//go:build windows
+
 package loader
 
 import (
@@ -31,7 +33,6 @@ var (
 //	 0 = v1 == v2
 //	 1 = v1 > v2
 func CompareBrowserVersions(v1 string, v2 string) (int, error) {
-
 	_v1, err := windows.UTF16PtrFromString(v1)
 	if err != nil {
 		return 0, err

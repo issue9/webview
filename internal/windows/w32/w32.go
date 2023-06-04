@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: MIT
+
+//go:build windows
+
+// Package w32 将用到的 win32 API 以及相关数据结构封装为 Go 模式
 package w32
 
 import (
@@ -9,18 +14,6 @@ import (
 )
 
 var (
-	ole32               = windows.NewLazySystemDLL("ole32")
-	Ole32CoInitializeEx = ole32.NewProc("CoInitializeEx")
-
-	kernel32                   = windows.NewLazySystemDLL("kernel32")
-	Kernel32GetCurrentThreadID = kernel32.NewProc("GetCurrentThreadId")
-
-	shlwapi                  = windows.NewLazySystemDLL("shlwapi")
-	shlwapiSHCreateMemStream = shlwapi.NewProc("SHCreateMemStream")
-
-	user32                   = windows.NewLazySystemDLL("user32")
-	User32LoadImageW         = user32.NewProc("LoadImageW")
-	User32GetSystemMetrics   = user32.NewProc("GetSystemMetrics")
 	User32RegisterClassExW   = user32.NewProc("RegisterClassExW")
 	User32CreateWindowExW    = user32.NewProc("CreateWindowExW")
 	User32DestroyWindow      = user32.NewProc("DestroyWindow")
@@ -42,11 +35,6 @@ var (
 	User32SetWindowPos       = user32.NewProc("SetWindowPos")
 	User32IsDialogMessage    = user32.NewProc("IsDialogMessage")
 	User32GetAncestor        = user32.NewProc("GetAncestor")
-)
-
-const (
-	SM_CXSCREEN = 0
-	SM_CYSCREEN = 1
 )
 
 const (
@@ -135,12 +123,7 @@ type WndClassExW struct {
 	HIconSm       windows.Handle
 }
 
-type Rect struct {
-	Left   int32
-	Top    int32
-	Right  int32
-	Bottom int32
-}
+type Rect = windows.Rect
 
 type MinMaxInfo struct {
 	PtReserved     Point
@@ -177,16 +160,4 @@ func UTF16PtrToString(p *uint16) string {
 	}
 	s := (*[(1 << 30) - 1]uint16)(unsafe.Pointer(p))[:n:n]
 	return string(utf16.Decode(s))
-}
-
-func SHCreateMemStream(data []byte) (uintptr, error) {
-	ret, _, err := shlwapiSHCreateMemStream.Call(
-		uintptr(unsafe.Pointer(&data[0])),
-		uintptr(len(data)),
-	)
-	if ret == 0 {
-		return 0, err
-	}
-
-	return ret, nil
 }

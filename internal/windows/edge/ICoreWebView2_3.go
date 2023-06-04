@@ -46,10 +46,10 @@ func (i *ICoreWebView2_3) SetVirtualHostNameToFolderMapping(hostName, folderPath
 func (i *ICoreWebView2) GetICoreWebView2_3() *ICoreWebView2_3 {
 	var result *ICoreWebView2_3
 
-	iidICoreWebView2_3 := NewGUID("{A0D6DF20-3B92-416D-AA0C-437A9C727857}")
+	iidICoreWebView2_3, _ := windows.GUIDFromString("{A0D6DF20-3B92-416D-AA0C-437A9C727857}")
 	_, _, _ = i.vtbl.QueryInterface.Call(
 		uintptr(unsafe.Pointer(i)),
-		uintptr(unsafe.Pointer(iidICoreWebView2_3)),
+		uintptr(unsafe.Pointer(&iidICoreWebView2_3)),
 		uintptr(unsafe.Pointer(&result)))
 
 	return result

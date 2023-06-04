@@ -51,7 +51,7 @@ func New(o *Options) (webview.Desktop, error) {
 	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
 
 	d.chromium = chromium
-	d.mainThread, _, _ = w32.Kernel32GetCurrentThreadID.Call()
+	d.mainThread = uintptr(windows.GetCurrentThreadId())
 	if err := d.CreateWithOptions(o); err != nil {
 		return nil, err
 	}

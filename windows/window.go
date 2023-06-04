@@ -29,17 +29,21 @@ func setWindowContext(wnd uintptr, data interface{}) {
 }
 
 func (d *desktop) CreateWithOptions(o *Options) error {
-	var hinstance windows.Handle
-	_ = windows.GetModuleHandleEx(0, nil, &hinstance)
+	var inst windows.Handle
+	if err := windows.GetModuleHandleEx(0, nil, &inst); err != nil {
+		return err
+	}
 
-	icow, _, _ := w32.User32GetSystemMetrics.Call(w32.SystemMetricsCxIcon)
-	icoh, _, _ := w32.User32GetSystemMetrics.Call(w32.SystemMetricsCyIcon)
-	icon, _, _ := w32.User32LoadImageW.Call(uintptr(hinstance), 32512, icow, icoh, 0)
+	icon := w32.LoadImage(uintptr(inst))
 
-	className, _ := windows.UTF16PtrFromString("webview")
+	className, err := windows.UTF16PtrFromString("webview")
+	if err != nil {
+		return err
+	}
+
 	wc := w32.WndClassExW{
 		CbSize:        uint32(unsafe.Sizeof(w32.WndClassExW{})),
-		HInstance:     hinstance,
+		HInstance:     inst,
 		LpszClassName: className,
 		HIcon:         windows.Handle(icon),
 		HIconSm:       windows.Handle(icon),
@@ -60,7 +64,7 @@ func (d *desktop) CreateWithOptions(o *Options) error {
 		uintptr(o.Size.Height),
 		0,
 		0,
-		uintptr(hinstance),
+		uintptr(inst),
 		0,
 	)
 	setWindowContext(d.hwnd, d)
