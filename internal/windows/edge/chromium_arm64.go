@@ -6,6 +6,8 @@ package edge
 import (
 	"unsafe"
 
+	"golang.org/x/sys/windows"
+
 	"github.com/issue9/webview/internal/windows/w32"
 )
 
@@ -14,8 +16,8 @@ func (e *Chromium) Resize() {
 		return
 	}
 
-	var bounds w32.Rect
-	w32.User32GetClientRect.Call(e.hwnd, uintptr(unsafe.Pointer(&bounds)))
+	var bounds windows.Rect
+	w32.GetClientRect(e.hwnd, &bounds)
 
 	words := (*[2]uintptr)(unsafe.Pointer(&bounds))
 	e.controller.vtbl.PutBounds.Call(

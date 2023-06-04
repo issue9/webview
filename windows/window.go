@@ -49,29 +49,36 @@ func (d *desktop) CreateWithOptions(o *Options) error {
 		HIconSm:       windows.Handle(icon),
 		LpfnWndProc:   windows.NewCallback(wndProc),
 	}
-	_, _, _ = w32.User32RegisterClassExW.Call(uintptr(unsafe.Pointer(&wc)))
+	if err := w32.RegisterClassEx(&wc); err != nil {
+		return err
+	}
 
-	windowName, _ := windows.UTF16PtrFromString(o.Title)
+	windowName, err := windows.UTF16PtrFromString(o.Title)
+	if err != nil {
+		return err
+	}
 
-	d.hwnd, _, _ = w32.User32CreateWindowExW.Call(
+	d.hwnd, err = w32.CreateWindowEx(
 		0,
 		uintptr(unsafe.Pointer(className)),
 		uintptr(unsafe.Pointer(windowName)),
-		0xCF0000, // WS_OVERLAPPEDWINDOW
-		uintptr(o.Position.X),
-		uintptr(o.Position.Y),
-		uintptr(o.Size.Width),
-		uintptr(o.Size.Height),
+		w32.WSOverlappedWindow,
+		o.Position,
+		o.Size,
 		0,
 		0,
 		uintptr(inst),
 		0,
 	)
+	if err != nil {
+		return err
+	}
+
 	setWindowContext(d.hwnd, d)
 
-	w32.User32ShowWindow.Call(d.hwnd, w32.SWShow)
-	w32.User32UpdateWindow.Call(d.hwnd)
-	w32.User32SetFocus.Call(d.hwnd)
+	w32.ShowWindow(d.hwnd, w32.SWShow)
+	w32.UpdateWindow(d.hwnd)
+	w32.SetFocus(d.hwnd)
 
 	if err := d.chromium.Embed(d.hwnd); err != nil {
 		return err
@@ -87,9 +94,8 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 		case w32.WMMove, w32.WMMoving:
 			_ = w.chromium.NotifyParentWindowPositionChanged()
 		case w32.WMNCLButtonDown:
-			_, _, _ = w32.User32SetFocus.Call(w.hwnd)
-			r, _, _ := w32.User32DefWindowProcW.Call(hwnd, msg, wp, lp)
-			return r
+			w32.SetFocus(w.hwnd)
+			return w32.DefWindowProc(hwnd, msg, wp, lp)
 		case w32.WMSize:
 			w.chromium.Resize()
 		case w32.WMActivate:
@@ -100,7 +106,7 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 				w.chromium.Focus()
 			}
 		case w32.WMClose:
-			_, _, _ = w32.User32DestroyWindow.Call(hwnd)
+			w32.DestroyWindow(hwnd)
 		case w32.WMDestroy:
 			w.Close()
 		case w32.WMGetMinMaxInfo:
@@ -113,11 +119,9 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 				lpmmi.PtMinTrackSize = w32.Point{X: int32(w.minSize.Width), Y: int32(w.minSize.Height)}
 			}
 		default:
-			r, _, _ := w32.User32DefWindowProcW.Call(hwnd, msg, wp, lp)
-			return r
+			return w32.DefWindowProc(hwnd, msg, wp, lp)
 		}
 		return 0
 	}
-	r, _, _ := w32.User32DefWindowProcW.Call(hwnd, msg, wp, lp)
-	return r
+	return w32.DefWindowProc(hwnd, msg, wp, lp)
 }

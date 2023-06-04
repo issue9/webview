@@ -97,17 +97,13 @@ func (e *Chromium) Embed(hwnd uintptr) error {
 		if atomic.LoadUintptr(&e.inited) != 0 {
 			break
 		}
-		r, _, _ := w32.User32GetMessageW.Call(
-			uintptr(unsafe.Pointer(&msg)),
-			0,
-			0,
-			0,
-		)
+
+		r := w32.GetMessage(&msg, 0, 0, 0)
 		if r == 0 {
 			break
 		}
-		_, _, _ = w32.User32TranslateMessage.Call(uintptr(unsafe.Pointer(&msg)))
-		_, _, _ = w32.User32DispatchMessageW.Call(uintptr(unsafe.Pointer(&msg)))
+		w32.TranslateMessage(&msg)
+		w32.DispatchMessage(&msg)
 	}
 	e.Init("window.external={invoke:s=>window.chrome.webview.postMessage(s)}")
 	return nil

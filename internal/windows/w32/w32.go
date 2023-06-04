@@ -11,30 +11,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-var (
-	User32RegisterClassExW   = user32.NewProc("RegisterClassExW")
-	User32CreateWindowExW    = user32.NewProc("CreateWindowExW")
-	User32DestroyWindow      = user32.NewProc("DestroyWindow")
-	User32ShowWindow         = user32.NewProc("ShowWindow")
-	User32UpdateWindow       = user32.NewProc("UpdateWindow")
-	User32SetFocus           = user32.NewProc("SetFocus")
-	User32GetMessageW        = user32.NewProc("GetMessageW")
-	User32TranslateMessage   = user32.NewProc("TranslateMessage")
-	User32DispatchMessageW   = user32.NewProc("DispatchMessageW")
-	User32DefWindowProcW     = user32.NewProc("DefWindowProcW")
-	User32GetClientRect      = user32.NewProc("GetClientRect")
-	User32PostQuitMessage    = user32.NewProc("PostQuitMessage")
-	User32PostMessageW       = user32.NewProc("PostMessageW")
-	User32SetWindowTextW     = user32.NewProc("SetWindowTextW")
-	User32PostThreadMessageW = user32.NewProc("PostThreadMessageW")
-	User32GetWindowLongPtrW  = user32.NewProc("GetWindowLongPtrW")
-	User32SetWindowLongPtrW  = user32.NewProc("SetWindowLongPtrW")
-	User32AdjustWindowRect   = user32.NewProc("AdjustWindowRect")
-	User32SetWindowPos       = user32.NewProc("SetWindowPos")
-	User32IsDialogMessage    = user32.NewProc("IsDialogMessage")
-	User32GetAncestor        = user32.NewProc("GetAncestor")
-)
-
 const (
 	CW_USEDEFAULT = 0x80000000
 )
@@ -56,10 +32,13 @@ const (
 	SystemMetricsCyIcon = 12
 )
 
+// https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow
 const (
+	SWHide = 0
 	SWShow = 5
 )
 
+// https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos
 const (
 	SWPNoZOrder     = 0x0004
 	SWPNoActivate   = 0x0010
@@ -90,6 +69,7 @@ const (
 	GWLStyle = -16
 )
 
+// https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
 const (
 	WSOverlapped       = 0x00000000
 	WSMaximizeBox      = 0x00010000

@@ -13,7 +13,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"unsafe"
 
 	"golang.org/x/sys/windows"
 
@@ -83,7 +82,7 @@ func (d *desktop) SetHTML(html string) {
 func (d *desktop) Run() {
 	var msg w32.Msg
 	for {
-		_, _, _ = w32.User32GetMessageW.Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0)
+		w32.GetMessage(&msg, 0, 0, 0)
 		if msg.Message == w32.WMApp {
 			d.m.Lock()
 			q := append([]func(){}, d.dispatchq...)
@@ -95,17 +94,16 @@ func (d *desktop) Run() {
 		} else if msg.Message == w32.WMQuit {
 			return
 		}
-		r, _, _ := w32.User32GetAncestor.Call(uintptr(msg.Hwnd), w32.GARoot)
-		r, _, _ = w32.User32IsDialogMessage.Call(r, uintptr(unsafe.Pointer(&msg)))
-		if r != 0 {
+		r := w32.GetAncestor(uintptr(msg.Hwnd), w32.GARoot)
+		if w32.IsDialogMessage(r, &msg) {
 			continue
 		}
-		_, _, _ = w32.User32TranslateMessage.Call(uintptr(unsafe.Pointer(&msg)))
-		_, _, _ = w32.User32DispatchMessageW.Call(uintptr(unsafe.Pointer(&msg)))
+		w32.TranslateMessage(&msg)
+		w32.DispatchMessage(&msg)
 	}
 }
 
-func (d *desktop) Close() { w32.User32PostQuitMessage.Call(0) }
+func (d *desktop) Close() { w32.PostQuitMessage(0) }
 
 func (d *desktop) OnLoad(js string) { d.chromium.Init(js) }
 
@@ -115,7 +113,7 @@ func (d *desktop) Dispatch(f func()) {
 	d.m.Lock()
 	d.dispatchq = append(d.dispatchq, f)
 	d.m.Unlock()
-	w32.User32PostThreadMessageW.Call(d.mainThread, w32.WMApp, 0, 0)
+	w32.PostThreadMessage(d.mainThread, w32.WMApp, 0, 0)
 }
 
 func (d *desktop) Bind(name string, f interface{}) error {
@@ -155,25 +153,24 @@ func (d *desktop) Bind(name string, f interface{}) error {
 func (d *desktop) Title() string { return d.title }
 
 func (d *desktop) SetTitle(title string) {
-	t, err := windows.UTF16FromString(title)
-	if err != nil {
-		t, _ = windows.UTF16FromString("")
+	if err := w32.SetWindowText(d.hwnd, title); err != nil {
+		log.Println(err)
+	} else {
+		d.title = title
 	}
-	d.title = title
-	w32.User32SetWindowTextW.Call(d.hwnd, uintptr(unsafe.Pointer(&t[0])))
 }
 
 func (d *desktop) Size() webview.Size { return d.size }
 
 func (d *desktop) SetSize(s webview.Size, hint webview.Hint) {
 	index := w32.GWLStyle
-	style, _, _ := w32.User32GetWindowLongPtrW.Call(d.hwnd, uintptr(index))
+	style := w32.GetWindowLongPtr(d.hwnd, index)
 	if hint == webview.HintFixed {
 		style &^= (w32.WSThickFrame | w32.WSMaximizeBox)
 	} else {
 		style |= (w32.WSThickFrame | w32.WSMaximizeBox)
 	}
-	w32.User32SetWindowLongPtrW.Call(d.hwnd, uintptr(index), style)
+	w32.SetWindowLongPtr(d.hwnd, index, style)
 
 	if hint == webview.HintMax {
 		d.maxSize = s
@@ -187,10 +184,8 @@ func (d *desktop) SetSize(s webview.Size, hint webview.Hint) {
 			Right:  int32(s.Width + p.X),
 			Bottom: int32(s.Height + p.Y),
 		}
-		_, _, _ = w32.User32AdjustWindowRect.Call(uintptr(unsafe.Pointer(&r)), w32.WSOverlappedWindow, 0)
-		_, _, _ = w32.User32SetWindowPos.Call(
-			d.hwnd, 0, uintptr(p.X), uintptr(p.Y), uintptr(r.Right), uintptr(r.Bottom),
-			w32.SWPNoZOrder|w32.SWPNoActivate|w32.SWPNoMove|w32.SWPFrameChanged)
+		w32.AdjustWindowRect(&r, w32.WSOverlappedWindow, false)
+		w32.SetWindowPos(d.hwnd, 0, p, s, w32.SWPNoZOrder|w32.SWPNoActivate|w32.SWPNoMove|w32.SWPFrameChanged)
 		d.chromium.Resize()
 		d.size = s // 保存 size
 	}
@@ -199,10 +194,7 @@ func (d *desktop) SetSize(s webview.Size, hint webview.Hint) {
 func (d *desktop) Position() webview.Point { return d.position }
 
 func (d *desktop) SetPosition(p webview.Point) {
-	s := d.Size()
-	_, _, _ = w32.User32SetWindowPos.Call(
-		d.hwnd, 0, uintptr(p.X), uintptr(p.Y), uintptr(p.X+s.Width), uintptr(p.Y+s.Height),
-		w32.SWPNoZOrder|w32.SWPNoActivate|w32.SWPNoMove|w32.SWPFrameChanged)
+	w32.SetWindowPos(d.hwnd, 0, p, d.Size(), w32.SWPNoZOrder|w32.SWPNoActivate|w32.SWPNoMove|w32.SWPFrameChanged)
 	d.position = p
 }
 
