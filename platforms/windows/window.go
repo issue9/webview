@@ -16,12 +16,11 @@ import (
 var windowContext = &sync.Map{}
 
 func getWindowContext(wnd uintptr) (*desktop, bool) {
-	if x, found := windowContext.Load(wnd); !found {
-		return nil, false
-	} else {
+	if x, found := windowContext.Load(wnd); found {
 		d, ok := x.(*desktop)
 		return d, ok
 	}
+	return nil, false
 }
 
 func setWindowContext(wnd uintptr, data *desktop) {
