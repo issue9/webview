@@ -8,7 +8,6 @@
 package windows
 
 import (
-	"errors"
 	"log"
 	"reflect"
 	"strings"
@@ -31,6 +30,7 @@ type desktop struct {
 	maxSize    webview.Size
 	minSize    webview.Size
 	autofocus  bool
+	errlog     *log.Logger
 
 	m         sync.Mutex
 	bindings  map[string]interface{}
@@ -40,17 +40,22 @@ type desktop struct {
 func New(o *Options) (webview.Desktop, error) {
 	o = sanitizeOptions(o)
 
-	d := &desktop{}
-	d.bindings = map[string]interface{}{}
-	d.autofocus = o.AutoFocus
+	d := &desktop{
+		mainThread: uintptr(windows.GetCurrentThreadId()),
+		position:   o.Position,
+		size:       o.Size,
+		autofocus:  o.AutoFocus,
+		errlog:     o.Error,
+
+		bindings: make(map[string]interface{}, 100),
+	}
 
 	chromium := edge.NewChromium()
 	chromium.MessageCallback = d.msgcb
 	chromium.DataPath = o.DataPath
 	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
-
 	d.chromium = chromium
-	d.mainThread = uintptr(windows.GetCurrentThreadId())
+
 	if err := d.createWindow(o); err != nil {
 		return nil, err
 	}
@@ -65,19 +70,15 @@ func New(o *Options) (webview.Desktop, error) {
 	}
 
 	if err = settings.PutAreDevToolsEnabled(o.Debug); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	return d, nil
 }
 
-func (d *desktop) Load(url string) {
-	d.chromium.Navigate(url)
-}
+func (d *desktop) Load(url string) { d.chromium.Navigate(url) }
 
-func (d *desktop) SetHTML(html string) {
-	d.chromium.NavigateToString(html)
-}
+func (d *desktop) SetHTML(html string) { d.chromium.NavigateToString(html) }
 
 func (d *desktop) Run() {
 	var msg w32.Msg
@@ -119,10 +120,10 @@ func (d *desktop) Dispatch(f func()) {
 func (d *desktop) Bind(name string, f interface{}) error {
 	v := reflect.ValueOf(f)
 	if v.Kind() != reflect.Func {
-		return errors.New("only functions can be bound")
+		return webview.ErrOnlyFuncCanBound()
 	}
 	if n := v.Type().NumOut(); n > 2 {
-		return errors.New("function may only return a value or a value+error")
+		return webview.ErrBindFuncReturnInvalid()
 	}
 	d.m.Lock()
 	d.bindings[name] = f
@@ -154,7 +155,7 @@ func (d *desktop) Title() string { return d.title }
 
 func (d *desktop) SetTitle(title string) {
 	if err := w32.SetWindowText(d.hwnd, title); err != nil {
-		log.Println(err)
+		d.errlog.Println(err)
 	} else {
 		d.title = title
 	}
