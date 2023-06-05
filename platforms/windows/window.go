@@ -24,11 +24,11 @@ func getWindowContext(wnd uintptr) (*desktop, bool) {
 	}
 }
 
-func setWindowContext(wnd uintptr, data interface{}) {
+func setWindowContext(wnd uintptr, data *desktop) {
 	windowContext.Store(wnd, data)
 }
 
-func (d *desktop) CreateWithOptions(o *Options) error {
+func (d *desktop) createWindow(o *Options) error {
 	var inst windows.Handle
 	if err := windows.GetModuleHandleEx(0, nil, &inst); err != nil {
 		return err

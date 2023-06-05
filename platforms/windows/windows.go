@@ -51,7 +51,7 @@ func New(o *Options) (webview.Desktop, error) {
 
 	d.chromium = chromium
 	d.mainThread = uintptr(windows.GetCurrentThreadId())
-	if err := d.CreateWithOptions(o); err != nil {
+	if err := d.createWindow(o); err != nil {
 		return nil, err
 	}
 
