@@ -9,13 +9,12 @@ package windows
 
 import (
 	"log"
-	"reflect"
-	"strings"
 	"sync"
 
 	"golang.org/x/sys/windows"
 
 	"github.com/issue9/webview"
+	"github.com/issue9/webview/internal/binds"
 	"github.com/issue9/webview/internal/windows/edge"
 	"github.com/issue9/webview/internal/windows/w32"
 )
@@ -32,8 +31,8 @@ type desktop struct {
 	autofocus  bool
 	errlog     *log.Logger
 
+	binds     *binds.Binds
 	m         sync.Mutex
-	bindings  map[string]interface{}
 	dispatchq []func()
 }
 
@@ -46,12 +45,12 @@ func New(o *Options) (webview.Desktop, error) {
 		size:       o.Size,
 		autofocus:  o.AutoFocus,
 		errlog:     o.Error,
-
-		bindings: make(map[string]interface{}, 100),
 	}
 
+	d.binds = binds.New(d)
+
 	chromium := edge.NewChromium()
-	chromium.MessageCallback = d.msgcb
+	chromium.MessageCallback = d.binds.MessageHandler
 	chromium.DataPath = o.DataPath
 	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
 	d.chromium = chromium
@@ -118,37 +117,7 @@ func (d *desktop) Dispatch(f func()) {
 }
 
 func (d *desktop) Bind(name string, f interface{}) error {
-	v := reflect.ValueOf(f)
-	if v.Kind() != reflect.Func {
-		return webview.ErrOnlyFuncCanBound()
-	}
-	if n := v.Type().NumOut(); n > 2 {
-		return webview.ErrBindFuncReturnInvalid()
-	}
-	d.m.Lock()
-	d.bindings[name] = f
-	d.m.Unlock()
-
-	d.OnLoad("(function() { var name = " + jsString(name) + ";" + `
-		var RPC = window._rpc = (window._rpc || {nextSeq: 1});
-		window[name] = function() {
-		  var seq = RPC.nextSeq++;
-		  var promise = new Promise(function(resolve, reject) {
-			RPC[seq] = {
-			  resolve: resolve,
-			  reject: reject,
-			};
-		  });
-		  window.external.invoke(JSON.stringify({
-			id: seq,
-			method: name,
-			params: Array.prototype.slice.call(arguments),
-		  }));
-		  return promise;
-		}
-	})()`)
-
-	return nil
+	return d.binds.Bind(name, f)
 }
 
 func (d *desktop) Title() string { return d.title }
@@ -197,8 +166,4 @@ func (d *desktop) Position() webview.Point { return d.position }
 func (d *desktop) SetPosition(p webview.Point) {
 	w32.SetWindowPos(d.hwnd, 0, p, d.Size(), w32.SWPNoZOrder|w32.SWPNoActivate|w32.SWPNoMove|w32.SWPFrameChanged)
 	d.position = p
-}
-
-func jsString(v string) string {
-	return `"` + strings.ReplaceAll(v, "\"", "\\\"") + `"`
 }
