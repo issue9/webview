@@ -1,3 +1,5 @@
+//go:build windows
+
 package edge
 
 import "golang.org/x/sys/windows"
