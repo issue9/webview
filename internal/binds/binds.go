@@ -20,13 +20,15 @@ type Binds struct {
 	m        sync.Mutex
 	bindings map[string]interface{}
 	app      webview.App
+	errlog   *log.Logger
 }
 
-func New(app webview.App) *Binds {
+func New(app webview.App, errlog *log.Logger) *Binds {
 	return &Binds{
 		m:        sync.Mutex{},
 		bindings: make(map[string]interface{}, 100),
 		app:      app,
+		errlog:   errlog,
 	}
 }
 
@@ -36,7 +38,11 @@ func (b *Binds) Bind(name string, f interface{}) error {
 	if v.Kind() != reflect.Func {
 		return webview.ErrOnlyFuncCanBound()
 	}
-	if n := v.Type().NumOut(); n > 2 {
+
+	t := v.Type()
+	if n := t.NumOut(); n > 2 {
+		return webview.ErrBindFuncReturnInvalid()
+	} else if n == 2 && !t.Out(1).Implements(errorType) { // 两个参数的第二个必须为 error
 		return webview.ErrBindFuncReturnInvalid()
 	}
 
@@ -110,7 +116,7 @@ func (b *Binds) call(name string, params ...json.RawMessage) (interface{}, error
 
 	case 2: // Two results: first one is value, second is error
 		if !res[1].Type().Implements(errorType) {
-			return nil, errors.New("second return value must be an error")
+			panic("返回的第二个参数只能是 error 类型") // 由 Binds.Bind 确保不会发生此错误
 		}
 		if res[1].Interface() == nil {
 			return res[0].Interface(), nil
@@ -118,7 +124,7 @@ func (b *Binds) call(name string, params ...json.RawMessage) (interface{}, error
 		return res[0].Interface(), res[1].Interface().(error)
 
 	default:
-		return nil, errors.New("unexpected number of return values")
+		panic("返回参数最多只能有两个") // 由 Binds.Bind 确保不会发生此错误
 	}
 }
 
@@ -126,7 +132,7 @@ func (b *Binds) call(name string, params ...json.RawMessage) (interface{}, error
 func (b *Binds) MessageHandler(msg string) {
 	rpc := rpcMessage{}
 	if err := json.Unmarshal([]byte(msg), &rpc); err != nil {
-		log.Printf("invalid RPC message: %v", err)
+		b.errlog.Printf("invalid RPC message %v", err)
 		return
 	}
 

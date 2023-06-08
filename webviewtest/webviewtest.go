@@ -9,6 +9,8 @@ import (
 	"github.com/issue9/webview"
 )
 
+// Desktop 用于测试基本的 Desktop 接口内容
+//
 // 来源 https://github.com/webview/webview/blob/899018ad0e5cc22a18cd734393ccae4d55e3b2b4/webview_test.go#L10
 func Desktop(w webview.Desktop) {
 	defer w.Close()

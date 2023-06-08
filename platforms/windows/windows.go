@@ -47,7 +47,7 @@ func New(o *Options) (webview.Desktop, error) {
 		errlog:     o.Error,
 	}
 
-	d.binds = binds.New(d)
+	d.binds = binds.New(d, o.Error)
 
 	chromium := edge.NewChromium()
 	chromium.MessageCallback = d.binds.MessageHandler
