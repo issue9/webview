@@ -39,6 +39,7 @@ func New(o *Options) (webview.Desktop, error) {
 
 	d := &desktop{
 		mainThread: uintptr(windows.GetCurrentThreadId()),
+		title:      o.Title,
 		position:   o.Position,
 		size:       o.Size,
 		autofocus:  o.AutoFocus,
