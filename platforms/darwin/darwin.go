@@ -11,10 +11,15 @@ package darwin
 */
 import "C"
 import (
+	"runtime"
 	"unsafe"
 
 	"github.com/issue9/webview"
 )
+
+func init() {
+	runtime.LockOSThread()
+}
 
 type desktop struct {
 	title    string
@@ -28,11 +33,12 @@ func New(o *Options) webview.Desktop {
 	t := C.CString(o.Title)
 	defer C.free(unsafe.Pointer(t))
 
+	wv := C.create_cocoa(C._Bool(o.Debug), C.double(o.Position.X), C.double(o.Position.Y), C.double(o.Size.Width), C.double(o.Size.Height), t)
 	return &desktop{
 		title:    o.Title,
 		position: o.Position,
 		size:     o.Size,
-		wv:       C.create_cocoa(C.double(o.Position.X), C.double(o.Position.Y), C.double(o.Size.Width), C.double(o.Size.Height), t),
+		wv:       wv,
 	}
 }
 

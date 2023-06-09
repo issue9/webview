@@ -5,16 +5,14 @@
 package darwin
 
 import (
+	"os"
 	"testing"
 
-	"github.com/issue9/assert/v3"
 	"github.com/issue9/webview/webviewtest"
 )
 
-func TestNew(t *testing.T) {
-	a := assert.New(t, false)
-
-	d := New(&Options{})
-	a.NotNil(d)
+func TestMain(m *testing.M) {
+	d := New(&Options{Debug: true})
 	webviewtest.Desktop(d)
+	os.Exit(m.Run())
 }
