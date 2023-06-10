@@ -9,12 +9,12 @@ package windows
 
 import (
 	"log"
-	"sync"
 
 	"golang.org/x/sys/windows"
 
 	"github.com/issue9/webview"
 	"github.com/issue9/webview/internal/binds"
+	"github.com/issue9/webview/internal/dispatch"
 	"github.com/issue9/webview/internal/windows/edge"
 	"github.com/issue9/webview/internal/windows/w32"
 )
@@ -31,9 +31,8 @@ type desktop struct {
 	autofocus  bool
 	errlog     *log.Logger
 
-	binds     *binds.Binds
-	m         sync.Mutex
-	dispatchq []func()
+	binds *binds.Binds
+	d     *dispatch.Dispatcher
 }
 
 func New(o *Options) (webview.Desktop, error) {
@@ -45,6 +44,8 @@ func New(o *Options) (webview.Desktop, error) {
 		size:       o.Size,
 		autofocus:  o.AutoFocus,
 		errlog:     o.Error,
+
+		d: dispatch.New(),
 	}
 
 	d.binds = binds.New(d, o.Error)
@@ -84,13 +85,7 @@ func (d *desktop) Run() {
 	for {
 		w32.GetMessage(&msg, 0, 0, 0)
 		if msg.Message == w32.WMApp {
-			d.m.Lock()
-			q := append([]func(){}, d.dispatchq...)
-			d.dispatchq = []func(){}
-			d.m.Unlock()
-			for _, v := range q {
-				v()
-			}
+			d.d.Run()
 		} else if msg.Message == w32.WMQuit {
 			return
 		}
@@ -110,9 +105,7 @@ func (d *desktop) OnLoad(js string) { d.chromium.Init(js) }
 func (d *desktop) Eval(js string) { d.chromium.Eval(js) }
 
 func (d *desktop) Dispatch(f func()) {
-	d.m.Lock()
-	d.dispatchq = append(d.dispatchq, f)
-	d.m.Unlock()
+	d.d.Add(f)
 	w32.PostThreadMessage(d.mainThread, w32.WMApp, 0, 0)
 }
 
