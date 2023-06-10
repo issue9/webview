@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-package dispatch
+package pipe
 
 import "sync"
 
@@ -11,9 +11,9 @@ type Dispatcher struct {
 	funcs []Func
 }
 
-func New() *Dispatcher {
+func NewDispatcher() *Dispatcher {
 	return &Dispatcher{
-		funcs: make([]Func, 10),
+		funcs: make([]Func, 0, 10),
 	}
 }
 

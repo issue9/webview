@@ -13,8 +13,7 @@ import (
 	"golang.org/x/sys/windows"
 
 	"github.com/issue9/webview"
-	"github.com/issue9/webview/internal/binds"
-	"github.com/issue9/webview/internal/dispatch"
+	"github.com/issue9/webview/internal/pipe"
 	"github.com/issue9/webview/internal/windows/edge"
 	"github.com/issue9/webview/internal/windows/w32"
 )
@@ -31,8 +30,8 @@ type desktop struct {
 	autofocus  bool
 	errlog     *log.Logger
 
-	binds *binds.Binds
-	d     *dispatch.Dispatcher
+	binder     *pipe.Binder
+	dispatcher *pipe.Dispatcher
 }
 
 func New(o *Options) (webview.Desktop, error) {
@@ -45,13 +44,13 @@ func New(o *Options) (webview.Desktop, error) {
 		autofocus:  o.AutoFocus,
 		errlog:     o.Error,
 
-		d: dispatch.New(),
+		dispatcher: pipe.NewDispatcher(),
 	}
 
-	d.binds = binds.New(d, o.Error)
+	d.binder = pipe.NewBinder(d, o.Error)
 
 	chromium := edge.NewChromium()
-	chromium.MessageCallback = d.binds.MessageHandler
+	chromium.MessageCallback = d.binder.MessageHandler
 	chromium.DataPath = o.DataPath
 	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
 	d.chromium = chromium
@@ -85,7 +84,7 @@ func (d *desktop) Run() {
 	for {
 		w32.GetMessage(&msg, 0, 0, 0)
 		if msg.Message == w32.WMApp {
-			d.d.Run()
+			d.dispatcher.Run()
 		} else if msg.Message == w32.WMQuit {
 			return
 		}
@@ -105,12 +104,12 @@ func (d *desktop) OnLoad(js string) { d.chromium.Init(js) }
 func (d *desktop) Eval(js string) { d.chromium.Eval(js) }
 
 func (d *desktop) Dispatch(f func()) {
-	d.d.Add(f)
+	d.dispatcher.Add(f)
 	w32.PostThreadMessage(d.mainThread, w32.WMApp, 0, 0)
 }
 
 func (d *desktop) Bind(name string, f interface{}) error {
-	return d.binds.Bind(name, f)
+	return d.binder.Bind(name, f)
 }
 
 func (d *desktop) Title() string { return d.title }

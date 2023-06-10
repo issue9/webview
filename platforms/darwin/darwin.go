@@ -16,8 +16,7 @@ import (
 	"unsafe"
 
 	"github.com/issue9/webview"
-	"github.com/issue9/webview/internal/binds"
-	"github.com/issue9/webview/internal/dispatch"
+	"github.com/issue9/webview/internal/pipe"
 )
 
 func init() {
@@ -25,8 +24,8 @@ func init() {
 }
 
 var (
-	dispatcher = dispatch.New()
-	binder     *binds.Binds
+	dispatcher = pipe.NewDispatcher()
+	binder     *pipe.Binder
 )
 
 type desktop struct {
@@ -47,7 +46,7 @@ func New(o *Options) webview.Desktop {
 		size:     o.Size,
 		app:      wv,
 	}
-	binder = binds.New(d, log.Default())
+	binder = pipe.NewBinder(d, log.Default())
 
 	return d
 }

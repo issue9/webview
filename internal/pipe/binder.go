@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Package binds 后端与前端的绑定功能
-package binds
+package pipe
 
 import (
 	"encoding/json"
@@ -14,17 +13,21 @@ import (
 	"github.com/issue9/webview"
 )
 
-var errorType = reflect.TypeOf((*error)(nil)).Elem()
+type rpcMessage struct {
+	ID     int               `json:"id"`
+	Method string            `json:"method"`
+	Params []json.RawMessage `json:"params"`
+}
 
-type Binds struct {
+type Binder struct {
 	m        sync.Mutex
 	bindings map[string]interface{}
 	app      webview.App
 	errlog   *log.Logger
 }
 
-func New(app webview.App, errlog *log.Logger) *Binds {
-	return &Binds{
+func NewBinder(app webview.App, errlog *log.Logger) *Binder {
+	return &Binder{
 		m:        sync.Mutex{},
 		bindings: make(map[string]interface{}, 100),
 		app:      app,
@@ -33,7 +36,7 @@ func New(app webview.App, errlog *log.Logger) *Binds {
 }
 
 // Bind 将 f 以 name 名称绑定在 webview 上
-func (b *Binds) Bind(name string, f interface{}) error {
+func (b *Binder) Bind(name string, f interface{}) error {
 	v := reflect.ValueOf(f)
 	if v.Kind() != reflect.Func {
 		return webview.ErrOnlyFuncCanBound()
@@ -73,7 +76,7 @@ func (b *Binds) Bind(name string, f interface{}) error {
 }
 
 // 调用指定名称的方法
-func (b *Binds) call(name string, params ...json.RawMessage) (interface{}, error) {
+func (b *Binder) call(name string, params ...json.RawMessage) (interface{}, error) {
 	b.m.Lock()
 	f, ok := b.bindings[name]
 	b.m.Unlock()
@@ -129,7 +132,7 @@ func (b *Binds) call(name string, params ...json.RawMessage) (interface{}, error
 }
 
 // MessageHandler 处理前端的调用请求
-func (b *Binds) MessageHandler(msg string) {
+func (b *Binder) MessageHandler(msg string) {
 	rpc := rpcMessage{}
 	if err := json.Unmarshal([]byte(msg), &rpc); err != nil {
 		b.errlog.Printf("invalid RPC message %v", err)
