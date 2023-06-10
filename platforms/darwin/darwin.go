@@ -36,6 +36,8 @@ type desktop struct {
 }
 
 func New(o *Options) webview.Desktop {
+	o = sanitizeOptions(o)
+
 	t := C.CString(o.Title)
 	defer C.free(unsafe.Pointer(t))
 
