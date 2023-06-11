@@ -12,11 +12,7 @@ import (
 // Desktop 测试 webview.Desktop 接口的实现
 //
 // NOTE: 部分系统需要在 TestMain 方法执行才行。
-//
-// 代码主要来源 https://github.com/webview/webview/blob/899018ad0e5cc22a18cd734393ccae4d55e3b2b4/webview_test.go#L10
 func Desktop(w webview.Desktop) {
-	defer w.Close()
-
 	// BUG(caixw): 以下代码会让程序暂停
 	//time.Sleep(time.Second)
 
@@ -24,6 +20,16 @@ func Desktop(w webview.Desktop) {
 
 	w.SetSize(webview.Size{Width: 200, Height: 500}, webview.HintNone)
 
+	app(w)
+}
+
+// App 测试 webview.App 接口的实现
+func App(w webview.App) {
+	app(w)
+}
+
+// 代码主要来源 https://github.com/webview/webview/blob/899018ad0e5cc22a18cd734393ccae4d55e3b2b4/webview_test.go#L10
+func app(w webview.App) {
 	w.Bind("noop", func() string {
 		log.Println("hello")
 		return "hello"
