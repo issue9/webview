@@ -15,6 +15,12 @@ import (
 	"unsafe"
 
 	"github.com/issue9/webview"
+	"github.com/issue9/webview/internal/pipe"
+)
+
+var (
+	dispatcher = pipe.NewDispatcher()
+	binder     *pipe.Binder
 )
 
 type desktop struct {
@@ -28,13 +34,17 @@ type desktop struct {
 func New(o *Options) webview.Desktop {
 	o = sanitizeOptions(o)
 
-	return &desktop{
+	d := &desktop{
 		title:    o.Title,
 		position: o.Position,
 		size:     o.Size,
 
 		app: C.create_gtk(C._Bool(o.Debug)),
 	}
+
+	binder = pipe.NewBinder(d, o.Error)
+
+	return d
 }
 
 func (d *desktop) SetHTML(html string) {
@@ -62,12 +72,12 @@ func (d *desktop) Eval(js string) {
 }
 
 func (d *desktop) Bind(name string, f interface{}) error {
-	// TODO
-	return nil
+	return binder.Bind(name, f)
 }
 
 func (d *desktop) Dispatch(f func()) {
-	// TODO
+	dispatcher.Add(f)
+	C.dispatch()
 }
 
 func (d *desktop) Run() {
@@ -89,7 +99,7 @@ func (d *desktop) SetTitle(t string) {
 func (d *desktop) Position() webview.Point { return d.position }
 
 func (d *desktop) SetPosition(p webview.Point) {
-	// TODO
+	C.move(d.app, C.int(p.X), C.int(p.Y))
 	d.position = p
 }
 
@@ -107,4 +117,14 @@ func (d *desktop) SetSize(s webview.Size, h webview.Hint) {
 		C.set_size(d.app, C.int(s.Width), C.int(s.Height))
 		d.size = s
 	}
+}
+
+//export dispatchCallback
+func dispatchCallback() {
+	dispatcher.Run()
+}
+
+//export messageCallback
+func messageCallback(msg *C.char) {
+	binder.MessageHandler(C.GoString(msg))
 }
