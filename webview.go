@@ -4,10 +4,10 @@ package webview
 
 // Renderer 基于 webview 渲染的基本接口
 type Renderer interface {
-	// 直接将内容设置为 HTML
+	// SetHTML 直接将内容设置为 HTML
 	SetHTML(html string)
 
-	// 加载指定地址的页面
+	// Load 加载指定地址的页面
 	//
 	// url 可以是本地或是网络地址
 	Load(url string)
@@ -17,10 +17,10 @@ type Renderer interface {
 type App interface {
 	Renderer
 
-	// 新页面加载时执行的 JS
+	// OnLoad 新页面加载时执行的 JS
 	OnLoad(js string)
 
-	// 计算 JS 结果并返回
+	// Eval 计算 JS
 	Eval(js string)
 
 	// Bind 绑定方法至前端
@@ -39,7 +39,7 @@ type App interface {
 	// Run 运行程序
 	Run()
 
-	// 关闭服务
+	// Close 关闭服务
 	Close()
 }
 
@@ -47,16 +47,22 @@ type App interface {
 type Desktop interface {
 	App
 
-	// 标题
+	//Title 获取标题
 	Title() string
+
+	// SetTitle 设置窗口标题
 	SetTitle(string)
 
-	// 窗口大小
+	// Size 获取窗口大小
 	Size() Size
+
+	// SetSize 设置窗口的大不
 	SetSize(Size, Hint)
 
-	// 窗口位置
+	// Position 获取窗口位置
 	Position() Point
+
+	// SetPosition 调整窗口的位置
 	SetPosition(Point)
 }
 
