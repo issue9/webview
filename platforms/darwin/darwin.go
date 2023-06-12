@@ -11,7 +11,6 @@ package darwin
 */
 import "C"
 import (
-	"log"
 	"runtime"
 	"unsafe"
 
@@ -48,7 +47,7 @@ func New(o *Options) webview.Desktop {
 		size:     o.Size,
 		app:      wv,
 	}
-	binder = pipe.NewBinder(d, log.Default())
+	binder = pipe.NewBinder(d, o.Error)
 
 	return d
 }
@@ -115,13 +114,15 @@ func (d *desktop) Size() webview.Size { return d.size }
 func (d *desktop) SetSize(s webview.Size, h webview.Hint) {
 	switch h {
 	case webview.HintFixed:
+		p := d.Position()
+		C.set_fixed_size(d.app, C.double(p.X), C.double(p.Y), C.double(s.Width), C.double(s.Height))
 	case webview.HintMax:
 		C.set_max_size(d.app, C.double(s.Width), C.double(s.Height))
 	case webview.HintMin:
 		C.set_min_size(d.app, C.double(s.Width), C.double(s.Height))
 	default: // webview.HintNone
 		p := d.Position()
-		C.set_frame(d.app, true, C.double(p.X), C.double(p.Y), C.double(s.Width), C.double(s.Height))
+		C.set_frame(d.app, C.double(p.X), C.double(p.Y), C.double(s.Width), C.double(s.Height))
 		d.size = s
 	}
 }
