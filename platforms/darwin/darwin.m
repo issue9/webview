@@ -37,7 +37,7 @@ App* create_cocoa(bool debug, CGFloat x, CGFloat y, CGFloat w, CGFloat h, const 
     [NSApplication sharedApplication];
     NSApp.delegate = [AppDelegate alloc];
     
-    NSWindowStyleMask style = NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable;
+    NSWindowStyleMask style = NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable;
     CGRect rect = CGRectMake(x, y, w, h);
     NSWindow* win = [[NSWindow alloc]initWithContentRect:rect styleMask:style backing:NSBackingStoreBuffered defer:NO];
     [win center];
@@ -94,9 +94,17 @@ void set_position(App* wv, CGFloat x, CGFloat y) {
     [wv->win setFrameTopLeftPoint:p];
 }
 
-void set_frame(App* wv, bool display, CGFloat x, CGFloat y, CGFloat w, CGFloat h) {
+void set_frame(App* wv, CGFloat x, CGFloat y, CGFloat w, CGFloat h) {
     NSRect frame = CGRectMake(x, y, w, h);
-    [wv->win setFrame:frame display:display];
+    [wv->win setFrame:frame display:NO];
+}
+
+void set_fixed_size(App* wv, CGFloat x, CGFloat y, CGFloat w, CGFloat h) {
+    set_frame(wv, x, y, w, h);
+
+    NSWindowStyleMask style = wv->win.styleMask;
+    style = style & (~NSWindowStyleMaskResizable);
+    wv->win.styleMask = style;
 }
 
 void set_min_size(App* wv, CGFloat w, CGFloat h) {

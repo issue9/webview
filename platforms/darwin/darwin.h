@@ -30,7 +30,9 @@ void set_html(App* wv, const char* html);
 
 void set_position(App* wv, CGFloat x, CGFloat y);
 
-void set_frame(App* wv, bool display, CGFloat x, CGFloat y, CGFloat w, CGFloat h);
+void set_frame(App* wv, CGFloat x, CGFloat y, CGFloat w, CGFloat h);
+
+void set_fixed_size(App* wv, CGFloat x, CGFloat y, CGFloat w, CGFloat h);
 
 void set_min_size(App* wv, CGFloat w, CGFloat h);
 
