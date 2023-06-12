@@ -16,18 +16,6 @@ const (
 )
 
 const (
-	LR_DEFAULTCOLOR     = 0x0000
-	LR_MONOCHROME       = 0x0001
-	LR_LOADFROMFILE     = 0x0010
-	LR_LOADTRANSPARENT  = 0x0020
-	LR_DEFAULTSIZE      = 0x0040
-	LR_VGACOLOR         = 0x0080
-	LR_LOADMAP3DCOLORS  = 0x1000
-	LR_CREATEDIBSECTION = 0x2000
-	LR_SHARED           = 0x8000
-)
-
-const (
 	SystemMetricsCxIcon = 11
 	SystemMetricsCyIcon = 12
 )
