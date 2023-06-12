@@ -77,8 +77,7 @@ func (d *desktop) Eval(js string) {
 }
 
 func (d *desktop) Bind(name string, f interface{}) error {
-	binder.Bind(name, f)
-	return nil
+	return binder.Bind(name, f)
 }
 
 func (d *desktop) Dispatch(f func()) {
