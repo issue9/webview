@@ -1,5 +1,4 @@
 //go:build windows
-// +build windows
 
 package edge
 
@@ -17,6 +16,8 @@ import (
 )
 
 type Chromium struct {
+	errlog*log.Logger
+
 	hwnd                  uintptr
 	focusOnInit           bool
 	controller            *ICoreWebView2Controller
@@ -46,8 +47,8 @@ type Chromium struct {
 	AcceleratorKeyCallback       func(uint) bool
 }
 
-func NewChromium() *Chromium {
-	e := &Chromium{}
+func NewChromium(errlog*log.Logger) *Chromium {
+	e := &Chromium{errlog:errlog}
 	/*
 	 All these handlers are passed to native code through syscalls with 'uintptr(unsafe.Pointer(handler))' and we know
 	 that a pointer to those will be kept in the native code. Furthermore these handlers als contain pointer to other Go
@@ -89,7 +90,6 @@ func (e *Chromium) Embed(hwnd uintptr) error {
 	if err != nil {
 		return fmt.Errorf("Error calling Webview2Loader: %v", err)
 	} else if res != 0 {
-		log.Printf("Result: %08x", res)
 		return fmt.Errorf("Result: %08x", res)
 	}
 	var msg w32.Msg
@@ -134,7 +134,8 @@ func (e *Chromium) Init(script string) {
 func (e *Chromium) Eval(script string) {
 	_script, err := windows.UTF16PtrFromString(script)
 	if err != nil {
-		log.Fatal(err)
+		e.errlog.Println(err)
+		return
 	}
 
 	_, _, _ = e.webview.vtbl.ExecuteScript.Call(
@@ -166,7 +167,8 @@ func (e *Chromium) Release() uintptr {
 
 func (e *Chromium) EnvironmentCompleted(res uintptr, env *ICoreWebView2Environment) uintptr {
 	if int64(res) < 0 {
-		log.Fatalf("Creating environment failed with %08x", res)
+		e.errlog.Printf("Creating environment failed with %08x", res)
+		return 0
 	}
 	_, _, _ = env.vtbl.AddRef.Call(uintptr(unsafe.Pointer(env)))
 	e.environment = env
@@ -181,7 +183,8 @@ func (e *Chromium) EnvironmentCompleted(res uintptr, env *ICoreWebView2Environme
 
 func (e *Chromium) CreateCoreWebView2ControllerCompleted(res uintptr, controller *ICoreWebView2Controller) uintptr {
 	if int64(res) < 0 {
-		log.Fatalf("Creating controller failed with %08x", res)
+		e.errlog.Fatalf("Creating controller failed with %08x", res)
+		return 0
 	}
 	_, _, _ = controller.vtbl.AddRef.Call(uintptr(unsafe.Pointer(controller)))
 	e.controller = controller
@@ -277,7 +280,8 @@ func (e *Chromium) PermissionRequested(_ *ICoreWebView2, args *iCoreWebView2Perm
 func (e *Chromium) WebResourceRequested(sender *ICoreWebView2, args *ICoreWebView2WebResourceRequestedEventArgs) uintptr {
 	req, err := args.GetRequest()
 	if err != nil {
-		log.Fatal(err)
+		e.errlog.Panicln(err)
+		return 0
 	}
 	if e.WebResourceRequestedCallback != nil {
 		e.WebResourceRequestedCallback(req, args)
@@ -286,9 +290,8 @@ func (e *Chromium) WebResourceRequested(sender *ICoreWebView2, args *ICoreWebVie
 }
 
 func (e *Chromium) AddWebResourceRequestedFilter(filter string, ctx COREWEBVIEW2_WEB_RESOURCE_CONTEXT) {
-	err := e.webview.AddWebResourceRequestedFilter(filter, ctx)
-	if err != nil {
-		log.Fatal(err)
+	if err := e.webview.AddWebResourceRequestedFilter(filter, ctx);err != nil {
+		e.errlog.Panicln(err)
 	}
 }
 

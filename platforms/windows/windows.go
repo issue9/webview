@@ -39,6 +39,7 @@ func New(o *Options) (webview.Desktop, error) {
 
 	d := &desktop{
 		mainThread: uintptr(windows.GetCurrentThreadId()),
+		title:      o.Title,
 		position:   o.Position,
 		size:       o.Size,
 		autofocus:  o.AutoFocus,
@@ -49,7 +50,7 @@ func New(o *Options) (webview.Desktop, error) {
 
 	d.binder = pipe.NewBinder(d, o.Error)
 
-	chromium := edge.NewChromium()
+	chromium := edge.NewChromium(o.Error)
 	chromium.MessageCallback = d.binder.MessageHandler
 	chromium.DataPath = o.DataPath
 	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
