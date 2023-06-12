@@ -17,7 +17,7 @@ typedef struct {
 
 void dispatch();
 
-App* create_gtk(bool debug);
+App* create_gtk(bool debug, int x, int y, int w, int h, const char* title);
 
 void add_script(App* app, const char* js);
 

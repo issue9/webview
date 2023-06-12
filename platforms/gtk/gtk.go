@@ -33,13 +33,18 @@ type desktop struct {
 
 func New(o *Options) webview.Desktop {
 	o = sanitizeOptions(o)
+	p := o.Position
+	s := o.Size
+
+	title := C.CString(o.Title)
+	defer C.free(unsafe.Pointer(title))
 
 	d := &desktop{
 		title:    o.Title,
 		position: o.Position,
 		size:     o.Size,
 
-		app: C.create_gtk(C._Bool(o.Debug)),
+		app: C.create_gtk(C._Bool(o.Debug), C.int(p.X), C.int(p.Y), C.int(s.Width), C.int(s.Height), title),
 	}
 
 	binder = pipe.NewBinder(d, o.Error)
