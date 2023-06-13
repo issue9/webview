@@ -30,8 +30,7 @@ type desktop struct {
 	autofocus  bool
 	errlog     *log.Logger
 
-	binder     *pipe.Binder
-	dispatcher *pipe.Dispatcher
+	binder *pipe.Binder
 }
 
 func New(o *Options) (webview.Desktop, error) {
@@ -44,13 +43,11 @@ func New(o *Options) (webview.Desktop, error) {
 		size:       o.Size,
 		autofocus:  o.AutoFocus,
 		errlog:     o.Error,
-
-		dispatcher: pipe.NewDispatcher(),
 	}
 
-	d.binder = pipe.NewBinder(d, o.Error)
-
+	// chromium 和 binder 相互引用，注意初始化顺序。
 	chromium := edge.NewChromium(o.Error)
+	d.binder = pipe.NewBinder(d, chromium.Eval, func() { w32.PostThreadMessage(d.mainThread, w32.WMApp, 0, 0) }, o.Error)
 	chromium.MessageCallback = d.binder.MessageHandler
 	chromium.DataPath = o.DataPath
 	chromium.SetPermission(edge.CoreWebView2PermissionKindClipboardRead, edge.CoreWebView2PermissionStateAllow)
@@ -85,7 +82,7 @@ func (d *desktop) Run() {
 	for {
 		w32.GetMessage(&msg, 0, 0, 0)
 		if msg.Message == w32.WMApp {
-			d.dispatcher.Run()
+			d.binder.DispatchCallback()
 		} else if msg.Message == w32.WMQuit {
 			return
 		}
@@ -101,13 +98,6 @@ func (d *desktop) Run() {
 func (d *desktop) Close() { w32.PostQuitMessage(0) }
 
 func (d *desktop) OnLoad(js string) { d.chromium.Init(js) }
-
-func (d *desktop) Eval(js string) { d.chromium.Eval(js) }
-
-func (d *desktop) Dispatch(f func()) {
-	d.dispatcher.Add(f)
-	w32.PostThreadMessage(d.mainThread, w32.WMApp, 0, 0)
-}
 
 func (d *desktop) Bind(name string, f interface{}) error {
 	return d.binder.Bind(name, f)

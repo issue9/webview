@@ -20,18 +20,30 @@ type rpcMessage struct {
 }
 
 type Binder struct {
-	m        sync.Mutex
-	bindings map[string]interface{}
-	app      webview.App
+	bindings *sync.Map
 	errlog   *log.Logger
+	app      webview.App
+
+	eval         func(string)
+	dispatch     func()
+	dispatchersM *sync.Mutex
+	dispatchers  []func()
 }
 
-func NewBinder(app webview.App, errlog *log.Logger) *Binder {
+// NewBinder 声明 Binder 对象
+//
+// 在客户端调用通过 Bind 绑定的方法时，计算结果是通过 eval 给到前端，该行为在主线程上异步进行，
+// dispatch 负责触发该行为，eval 执行具体操作。
+func NewBinder(app webview.App, eval func(string), dispatch func(), errlog *log.Logger) *Binder {
 	return &Binder{
-		m:        sync.Mutex{},
-		bindings: make(map[string]interface{}, 100),
-		app:      app,
+		bindings: &sync.Map{},
 		errlog:   errlog,
+		app:      app,
+
+		eval:         eval,
+		dispatch:     dispatch,
+		dispatchersM: &sync.Mutex{},
+		dispatchers:  make([]func(), 0, 10),
 	}
 }
 
@@ -49,9 +61,7 @@ func (b *Binder) Bind(name string, f interface{}) error {
 		return webview.ErrBindFuncReturnInvalid()
 	}
 
-	b.m.Lock()
-	b.bindings[name] = f
-	b.m.Unlock()
+	b.bindings.Store(name, f)
 
 	b.app.OnLoad("(function() { var name = " + jsString(name) + ";" + `
 		var RPC = window._rpc = (window._rpc || {nextSeq: 1});
@@ -77,9 +87,7 @@ func (b *Binder) Bind(name string, f interface{}) error {
 
 // 调用指定名称的方法
 func (b *Binder) call(name string, params ...json.RawMessage) (interface{}, error) {
-	b.m.Lock()
-	f, ok := b.bindings[name]
-	b.m.Unlock()
+	f, ok := b.bindings.Load(name)
 	if !ok {
 		return nil, nil
 	}
@@ -108,7 +116,7 @@ func (b *Binder) call(name string, params ...json.RawMessage) (interface{}, erro
 	switch len(res) {
 	case 0:
 		return nil, nil
-	case 1: // One result may be a value, or an error
+	case 1:
 		if res[0].Type().Implements(errorType) {
 			if res[0].Interface() != nil {
 				return nil, res[0].Interface().(error)
@@ -117,7 +125,7 @@ func (b *Binder) call(name string, params ...json.RawMessage) (interface{}, erro
 		}
 		return res[0].Interface(), nil
 
-	case 2: // Two results: first one is value, second is error
+	case 2:
 		if !res[1].Type().Implements(errorType) {
 			panic("返回的第二个参数只能是 error 类型") // 由 Binds.Bind 确保不会发生此错误
 		}
@@ -140,17 +148,35 @@ func (b *Binder) MessageHandler(msg string) {
 	}
 
 	id := strconv.Itoa(rpc.ID)
+	var f func()
 	if res, err := b.call(rpc.Method, rpc.Params...); err != nil {
-		b.app.Dispatch(func() {
-			b.app.Eval("window._rpc[" + id + "].reject(" + jsString(err.Error()) + "); window._rpc[" + id + "] = undefined")
-		})
+		f = func() {
+			b.eval("window._rpc[" + id + "].reject(" + jsString(err.Error()) + "); window._rpc[" + id + "] = undefined")
+		}
 	} else if data, err := json.Marshal(res); err != nil {
-		b.app.Dispatch(func() {
-			b.app.Eval("window._rpc[" + id + "].reject(" + jsString(err.Error()) + "); window._rpc[" + id + "] = undefined")
-		})
+		f = func() {
+			b.eval("window._rpc[" + id + "].reject(" + jsString(err.Error()) + "); window._rpc[" + id + "] = undefined")
+		}
 	} else {
-		b.app.Dispatch(func() {
-			b.app.Eval("window._rpc[" + id + "].resolve(" + string(data) + "); window._rpc[" + id + "] = undefined")
-		})
+		f = func() {
+			b.eval("window._rpc[" + id + "].resolve(" + string(data) + "); window._rpc[" + id + "] = undefined")
+		}
 	}
+
+	b.dispatchersM.Lock()
+	b.dispatchers = append(b.dispatchers, f)
+	b.dispatchersM.Unlock()
+
+	b.dispatch() // 触发主线程调用 DispatchCallback
+}
+
+func (b *Binder) DispatchCallback() {
+	b.dispatchersM.Lock()
+	defer b.dispatchersM.Unlock()
+
+	for _, f := range b.dispatchers {
+		f()
+	}
+
+	b.dispatchers = b.dispatchers[:0]
 }

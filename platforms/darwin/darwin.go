@@ -22,10 +22,7 @@ func init() {
 	runtime.LockOSThread()
 }
 
-var (
-	dispatcher = pipe.NewDispatcher()
-	binder     *pipe.Binder
-)
+var binder *pipe.Binder
 
 type desktop struct {
 	title    string
@@ -47,9 +44,15 @@ func New(o *Options) webview.Desktop {
 		size:     o.Size,
 		app:      wv,
 	}
-	binder = pipe.NewBinder(d, o.Error)
+	binder = pipe.NewBinder(d, d.eval, func() { C.dispatch() }, o.Error)
 
 	return d
+}
+
+func (d *desktop) eval(js string) {
+	t := C.CString(js)
+	defer C.free(unsafe.Pointer(t))
+	C.eval(d.app, t)
 }
 
 func (d *desktop) SetHTML(html string) {
@@ -70,19 +73,8 @@ func (d *desktop) OnLoad(js string) {
 	C.add_user_script(d.app, t)
 }
 
-func (d *desktop) Eval(js string) {
-	t := C.CString(js)
-	defer C.free(unsafe.Pointer(t))
-	C.eval(d.app, t)
-}
-
 func (d *desktop) Bind(name string, f interface{}) error {
 	return binder.Bind(name, f)
-}
-
-func (d *desktop) Dispatch(f func()) {
-	dispatcher.Add(f)
-	C.dispatch()
 }
 
 func (d *desktop) Run() {

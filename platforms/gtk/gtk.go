@@ -12,16 +12,18 @@ package gtk
 */
 import "C"
 import (
+	"runtime"
 	"unsafe"
 
 	"github.com/issue9/webview"
 	"github.com/issue9/webview/internal/pipe"
 )
 
-var (
-	dispatcher = pipe.NewDispatcher()
-	binder     *pipe.Binder
-)
+func init() {
+	runtime.LockOSThread()
+}
+
+var binder *pipe.Binder
 
 type desktop struct {
 	title    string
@@ -47,9 +49,15 @@ func New(o *Options) webview.Desktop {
 		app: C.create_gtk(C._Bool(o.Debug), C.int(p.X), C.int(p.Y), C.int(s.Width), C.int(s.Height), title),
 	}
 
-	binder = pipe.NewBinder(d, o.Error)
+	binder = pipe.NewBinder(d, d.eval, func() { C.dispatch() }, o.Error)
 
 	return d
+}
+
+func (d *desktop) eval(js string) {
+	t := C.CString(js)
+	defer C.free(unsafe.Pointer(t))
+	C.eval(d.app, t)
 }
 
 func (d *desktop) SetHTML(html string) {
@@ -70,19 +78,8 @@ func (d *desktop) OnLoad(js string) {
 	C.add_script(d.app, t)
 }
 
-func (d *desktop) Eval(js string) {
-	t := C.CString(js)
-	defer C.free(unsafe.Pointer(t))
-	C.eval(d.app, t)
-}
-
 func (d *desktop) Bind(name string, f interface{}) error {
 	return binder.Bind(name, f)
-}
-
-func (d *desktop) Dispatch(f func()) {
-	dispatcher.Add(f)
-	C.dispatch()
 }
 
 func (d *desktop) Run() {

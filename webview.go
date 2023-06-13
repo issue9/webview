@@ -20,16 +20,10 @@ type App interface {
 	// OnLoad 新页面加载时执行的 JS
 	OnLoad(js string)
 
-	// Eval 计算 JS
-	Eval(js string)
-
 	// Bind 绑定方法至前端
 	//
 	// f 必须是一个函数，反加值可以是单个值，或是两值，如果是两个值，那么其第二个必须得是 error。
 	Bind(name string, f interface{}) error
-
-	// Dispatch 向主线程添加一个需要执行的方法
-	Dispatch(f func())
 
 	// 切换界面语言
 	//
