@@ -178,5 +178,5 @@ func (b *Binder) DispatchCallback() {
 		f()
 	}
 
-	b.dispatchers = b.dispatchers[:0]
+	b.dispatchers = b.dispatchers[:0] // 清除已执行的函数
 }

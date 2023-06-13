@@ -123,7 +123,7 @@ func (d *desktop) SetSize(s webview.Size, h webview.Hint) {
 
 //export dispatchCallback
 func dispatchCallback() {
-	dispatcher.Run()
+	binder.DispatchCallback()
 }
 
 //export messageCallback
