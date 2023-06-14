@@ -33,10 +33,7 @@ void _set_title(GtkWidget* win, const char* title) {
 }
 
 void _set_size(GtkWidget* win, int w, int h) {
-    GdkGeometry g;
-    g.base_width = w;
-    g.base_height = h;
-    gtk_window_set_geometry_hints(GTK_WINDOW(win), NULL, &g, GDK_HINT_BASE_SIZE);
+    gtk_window_resize(GTK_WINDOW(win), w, h);
 }
 
 App* create_gtk(bool debug, int x, int y, int w, int h, bool fixed, const char* title) {
