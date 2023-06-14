@@ -2,6 +2,7 @@
 
 //go:build darwin
 
+// Package darwin macOS 端的实现
 package darwin
 
 /*
@@ -36,8 +37,9 @@ func New(o *Options) webview.Desktop {
 
 	t := C.CString(o.Title)
 	defer C.free(unsafe.Pointer(t))
+	x, y, w, h := C.double(o.Position.X), C.double(o.Position.Y), C.double(o.Size.Width), C.double(o.Size.Height)
+	wv := C.create_cocoa(C._Bool(o.Debug), x, y, w, h, o.Style, t)
 
-	wv := C.create_cocoa(C._Bool(o.Debug), C.double(o.Position.X), C.double(o.Position.Y), C.double(o.Size.Width), C.double(o.Size.Height), t)
 	d := &desktop{
 		title:    o.Title,
 		position: o.Position,
@@ -104,9 +106,6 @@ func (d *desktop) Size() webview.Size { return d.size }
 
 func (d *desktop) SetSize(s webview.Size, h webview.Hint) {
 	switch h {
-	case webview.HintFixed:
-		p := d.Position()
-		C.set_fixed_size(d.app, C.double(p.X), C.double(p.Y), C.double(s.Width), C.double(s.Height))
 	case webview.HintMax:
 		C.set_max_size(d.app, C.double(s.Width), C.double(s.Height))
 	case webview.HintMin:

@@ -75,7 +75,7 @@ func AdjustWindowRect(rect *windows.Rect, style int, menu bool) {
 	if menu {
 		m = 1
 	}
-	user32AdjustWindowRect.Call(uintptr(unsafe.Pointer(rect)), WSOverlappedWindow, uintptr(m))
+	user32AdjustWindowRect.Call(uintptr(unsafe.Pointer(rect)), style, uintptr(m))
 }
 
 func DefWindowProc(hwnd, msg, wp, lp uintptr) uintptr {

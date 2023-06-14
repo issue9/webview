@@ -25,6 +25,7 @@ type desktop struct {
 	title      string
 	position   webview.Point
 	size       webview.Size
+	style      Style
 	maxSize    webview.Size
 	minSize    webview.Size
 	autofocus  bool
@@ -41,6 +42,7 @@ func New(o *Options) (webview.Desktop, error) {
 		title:      o.Title,
 		position:   o.Position,
 		size:       o.Size,
+		style:      o.Style,
 		autofocus:  o.AutoFocus,
 		errlog:     o.Error,
 	}
@@ -116,15 +118,6 @@ func (d *desktop) SetTitle(title string) {
 func (d *desktop) Size() webview.Size { return d.size }
 
 func (d *desktop) SetSize(s webview.Size, hint webview.Hint) {
-	index := w32.GWLStyle
-	style := w32.GetWindowLongPtr(d.hwnd, index)
-	if hint == webview.HintFixed {
-		style &^= (w32.WSThickFrame | w32.WSMaximizeBox)
-	} else {
-		style |= (w32.WSThickFrame | w32.WSMaximizeBox)
-	}
-	w32.SetWindowLongPtr(d.hwnd, index, style)
-
 	if hint == webview.HintMax {
 		d.maxSize = s
 	} else if hint == webview.HintMin {
@@ -137,7 +130,7 @@ func (d *desktop) SetSize(s webview.Size, hint webview.Hint) {
 			Right:  int32(s.Width + p.X),
 			Bottom: int32(s.Height + p.Y),
 		}
-		w32.AdjustWindowRect(&r, w32.WSOverlappedWindow, false)
+		w32.AdjustWindowRect(&r, d.style, false)
 		w32.SetWindowPos(d.hwnd, 0, p, s, w32.SWPNoZOrder|w32.SWPNoActivate|w32.SWPNoMove|w32.SWPFrameChanged)
 		d.chromium.Resize()
 		d.size = s // 保存 size

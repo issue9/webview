@@ -25,6 +25,9 @@ type Options struct {
 	// Size 初始大小
 	Size webview.Size
 
+	// FixedSize 是否固定窗口大小
+	FixedSize bool
+
 	// Error 错误日志输出
 	//
 	// 部分非致命的错误经由此输出，如果为空，则采用 log.Default() 。

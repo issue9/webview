@@ -33,13 +33,12 @@ void _add_user_script(WKWebViewConfiguration* config, NSString* js) {
 // debug 是否启用调试模式
 // x,y,w,h 表示窗口的左上角和宽高
 // title 为窗口标题
-App* create_cocoa(bool debug, CGFloat x, CGFloat y, CGFloat w, CGFloat h, const char* title) {
+App* create_cocoa(bool debug, CGFloat x, CGFloat y, CGFloat w, CGFloat h, NSWindowStyleMask s, const char* title) {
     [NSApplication sharedApplication];
     NSApp.delegate = [AppDelegate alloc];
     
-    NSWindowStyleMask style = NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable;
     CGRect rect = CGRectMake(x, y, w, h);
-    NSWindow* win = [[NSWindow alloc]initWithContentRect:rect styleMask:style backing:NSBackingStoreBuffered defer:NO];
+    NSWindow* win = [[NSWindow alloc]initWithContentRect:rect styleMask:s backing:NSBackingStoreBuffered defer:NO];
     [win center];
     [win makeKeyAndOrderFront:nil];
     
@@ -97,14 +96,6 @@ void set_position(App* wv, CGFloat x, CGFloat y) {
 void set_frame(App* wv, CGFloat x, CGFloat y, CGFloat w, CGFloat h) {
     NSRect frame = CGRectMake(x, y, w, h);
     [wv->win setFrame:frame display:NO];
-}
-
-void set_fixed_size(App* wv, CGFloat x, CGFloat y, CGFloat w, CGFloat h) {
-    set_frame(wv, x, y, w, h);
-
-    NSWindowStyleMask style = wv->win.styleMask;
-    style = style & (~NSWindowStyleMaskResizable);
-    wv->win.styleMask = style;
 }
 
 void set_min_size(App* wv, CGFloat w, CGFloat h) {

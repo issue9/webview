@@ -109,8 +109,6 @@ func (d *desktop) Size() webview.Size { return d.size }
 
 func (d *desktop) SetSize(s webview.Size, h webview.Hint) {
 	switch h {
-	case webview.HintFixed:
-		C.set_fixed_size(d.app, C.int(s.Width), C.int(s.Height))
 	case webview.HintMax:
 		C.set_max_size(d.app, C.int(s.Width), C.int(s.Height))
 	case webview.HintMin:

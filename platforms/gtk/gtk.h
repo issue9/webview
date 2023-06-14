@@ -17,13 +17,11 @@ typedef struct {
 
 void dispatch();
 
-App* create_gtk(bool debug, int x, int y, int w, int h, const char* title);
+App* create_gtk(bool debug, int x, int y, int w, int h, bool fixed, const char* title);
 
 void add_script(App* app, const char* js);
 
 void set_size(App* app, int w, int h);
-
-void set_fixed_size(App* app, int w,int h);
 
 void set_min_size(App* app, int w, int h);;
 

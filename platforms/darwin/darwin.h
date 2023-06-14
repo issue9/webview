@@ -16,7 +16,7 @@ typedef struct {
 @interface AppScriptMessageHandler : NSObject <WKScriptMessageHandler>
 @end
 
-App* create_cocoa(bool debug, CGFloat x, CGFloat y, CGFloat w, CGFloat h, const char* title);
+App* create_cocoa(bool debug, CGFloat x, CGFloat y, CGFloat w, CGFloat h, NSWindowStyleMask style, const char* title);
 
 void set_title(App* wv, const char* title);
 
@@ -31,8 +31,6 @@ void set_html(App* wv, const char* html);
 void set_position(App* wv, CGFloat x, CGFloat y);
 
 void set_frame(App* wv, CGFloat x, CGFloat y, CGFloat w, CGFloat h);
-
-void set_fixed_size(App* wv, CGFloat x, CGFloat y, CGFloat w, CGFloat h);
 
 void set_min_size(App* wv, CGFloat w, CGFloat h);
 

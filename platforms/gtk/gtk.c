@@ -39,7 +39,7 @@ void _set_size(GtkWidget* win, int w, int h) {
     gtk_window_set_geometry_hints(GTK_WINDOW(win), NULL, &g, GDK_HINT_BASE_SIZE);
 }
 
-App* create_gtk(bool debug, int x, int y, int w, int h, const char* title) {
+App* create_gtk(bool debug, int x, int y, int w, int h, bool fixed, const char* title) {
     WebKitSettings* settings = webkit_settings_new();
     webkit_settings_set_enable_developer_extras(settings, debug);
     webkit_settings_set_javascript_can_access_clipboard(settings, true);
@@ -58,6 +58,11 @@ App* create_gtk(bool debug, int x, int y, int w, int h, const char* title) {
     gtk_container_add(GTK_CONTAINER(win), wv);
     gtk_widget_grab_focus(wv);
 
+    if (fixed) {
+        gtk_window_set_resizable(GTK_WINDOW(win), false);
+    }
+
+
     App *app = (App*)malloc(sizeof(App));
     app->win = win;
     app->wv = wv;
@@ -70,11 +75,6 @@ void add_script(App* app, const char* js) {
 
 void set_size(App* app, int w, int h) {
     _set_size(app->win, w, h);
-}
-
-void set_fixed_size(App* app, int w,int h) {
-    gtk_window_set_resizable(GTK_WINDOW(app->win), true);
-    gtk_widget_set_size_request(app->win, w, h);
 }
 
 void set_min_size(App* app, int w, int h) {

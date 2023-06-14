@@ -2,8 +2,8 @@
 
 package webview
 
-// Renderer 基于 webview 渲染的基本接口
-type Renderer interface {
+// App 基于 webview 应用的基本接口
+type App interface {
 	// SetHTML 直接将内容设置为 HTML
 	SetHTML(html string)
 
@@ -11,11 +11,6 @@ type Renderer interface {
 	//
 	// url 可以是本地或是网络地址
 	Load(url string)
-}
-
-// App 基于 webview 应用的基本接口
-type App interface {
-	Renderer
 
 	// OnLoad 新页面加载时执行的 JS
 	OnLoad(js string)
@@ -24,11 +19,6 @@ type App interface {
 	//
 	// f 必须是一个函数，反加值可以是单个值，或是两值，如果是两个值，那么其第二个必须得是 error。
 	Bind(name string, f interface{}) error
-
-	// 切换界面语言
-	//
-	// 比如右键菜单等
-	//SetLocale(string)
 
 	// Run 运行程序
 	Run()
@@ -50,13 +40,13 @@ type Desktop interface {
 	// Size 获取窗口大小
 	Size() Size
 
-	// SetSize 设置窗口的大不
+	// SetSize 调整窗口的大小
 	SetSize(Size, Hint)
 
 	// Position 获取窗口位置
 	Position() Point
 
-	// SetPosition 调整窗口的位置
+	// SetPosition 移动窗口的位置
 	SetPosition(Point)
 }
 
@@ -72,7 +62,6 @@ type Hint int8
 
 const (
 	HintNone Hint = iota
-	HintFixed
 	HintMin
 	HintMax
 )

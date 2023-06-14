@@ -32,11 +32,29 @@ type Options struct {
 	// Size 初始大小
 	Size webview.Size
 
+	// Style 窗口样式
+	Style Style
+
 	// Error 错误日志输出
 	//
 	// 部分非致命的错误经由此输出，如果为空，则采用 log.Default() 。
 	Error *log.Logger
 }
+
+type Style = int
+
+// 窗口样式定义，可参考[官方文档]
+//
+// [官方文档] https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
+const (
+	WSOverlapped       Style = 0x00000000
+	WSMaximizeBox            = 0x00010000
+	WSThickFrame             = 0x00040000
+	WSCaption                = 0x00C00000
+	WSSysMenu                = 0x00080000
+	WSMinimizeBox            = 0x00020000
+	WSOverlappedWindow       = (WSOverlapped | WSCaption | WSSysMenu | WSThickFrame | WSMinimizeBox | WSMaximizeBox)
+)
 
 func sanitizeOptions(o *Options) *Options {
 	if o == nil {

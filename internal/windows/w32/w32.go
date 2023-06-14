@@ -57,17 +57,6 @@ const (
 	GWLStyle = -16
 )
 
-// https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
-const (
-	WSOverlapped       = 0x00000000
-	WSMaximizeBox      = 0x00010000
-	WSThickFrame       = 0x00040000
-	WSCaption          = 0x00C00000
-	WSSysMenu          = 0x00080000
-	WSMinimizeBox      = 0x00020000
-	WSOverlappedWindow = (WSOverlapped | WSCaption | WSSysMenu | WSThickFrame | WSMinimizeBox | WSMaximizeBox)
-)
-
 const (
 	WAInactive    = 0
 	WAActive      = 1
