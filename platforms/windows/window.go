@@ -61,7 +61,7 @@ func (d *desktop) createWindow(o *Options) error {
 		0,
 		uintptr(unsafe.Pointer(className)),
 		uintptr(unsafe.Pointer(windowName)),
-		o.Style,
+		uintptr(o.Style),
 		o.Position,
 		o.Size,
 		0,
