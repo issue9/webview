@@ -45,7 +45,7 @@ type Style = int
 
 // 窗口样式定义，可参考[官方文档]
 //
-// [官方文档] https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
+// [官方文档]: https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
 const (
 	WSOverlapped       Style = 0x00000000
 	WSMaximizeBox            = 0x00010000
